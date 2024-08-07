@@ -195,12 +195,12 @@ def _update(
     return num_tp, num_label, num_prediction
 
 
-def _f1_score_compute(
+def _precision_recall_f1_score_compute(
     num_tp: torch.Tensor,
     num_label: torch.Tensor,
     num_prediction: torch.Tensor,
     average: Optional[str],
-) -> torch.Tensor:
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     # Check if all classes exist in either ``target``.
     num_label_is_zero = num_label == 0
     if num_label_is_zero.any():
@@ -225,13 +225,24 @@ def _f1_score_compute(
     f1 = torch.nan_to_num(f1)
 
     if average == "micro":
-        return f1
+        return precision, recall, f1
     elif average == "macro":
-        return f1.mean()
+        return precision.mean(), recall.mean(), f1.mean()
     elif average == "weighted":
-        return (f1 * (num_label / num_label.sum())).sum()
+        weight = (num_label / num_label.sum())
+        return (precision * weight).sum(), (recall * weight).sum(), (f1 * weight).sum()
     else:  # average is None
-        return f1
+        return precision, recall, f1
+
+
+def _f1_score_compute(
+    num_tp: torch.Tensor,
+    num_label: torch.Tensor,
+    num_prediction: torch.Tensor,
+    average: Optional[str],
+) -> torch.Tensor:
+    precision, recall, f1 = _precision_recall_f1_score_compute(num_tp, num_label, num_prediction, average)
+    return f1
 
 
 def _f1_score_param_check(

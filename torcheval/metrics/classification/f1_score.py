@@ -8,7 +8,7 @@
 
 # pyre-ignore-all-errors[16]: Undefined attribute of metric states.
 
-from typing import Iterable, Optional, TypeVar
+from typing import Iterable, Optional, TypeVar, Tuple
 
 import torch
 
@@ -17,6 +17,7 @@ from torcheval.metrics.functional.classification.f1_score import (
     _f1_score_compute,
     _f1_score_param_check,
     _f1_score_update,
+    _precision_recall_f1_score_compute
 )
 from torcheval.metrics.metric import Metric
 
@@ -148,6 +149,17 @@ class MulticlassF1Score(Metric[torch.Tensor]):
         0 is returned if no calls to ``update()`` are made before ``compute()`` is called.
         """
         return _f1_score_compute(
+            self.num_tp, self.num_label, self.num_prediction, self.average
+        )
+
+    @torch.inference_mode()
+    def compute_with_intermediates(self: TF1Score) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """
+        Return the f1 score alongside intermediate values (precision and recall).
+
+        0 is returned if no called to ``update()`` are made before ``compute()`` is called.
+        """
+        return _precision_recall_f1_score_compute(
             self.num_tp, self.num_label, self.num_prediction, self.average
         )
 
